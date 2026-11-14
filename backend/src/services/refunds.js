@@ -41,13 +41,14 @@ export async function forgetCustomer(db, { merchantId, customerId }) {
 
   const memories = await db.collection("memories").deleteMany({ "scope.merchantId": merchantId, "scope.customerId": customerId });
   const footprints = await db.collection("footprints").deleteMany({ merchantId, customerId });
+  const calls = await db.collection("calls").deleteMany({ merchantId, customerId });
   const claims = await db.collection("claims").updateMany(
     { merchantId, customerId },
     { $set: { text: "[forgotten]", callerQuestions: [] } },
   );
   await audit(db, "customer.forgotten", { merchantId, subject: hashFootprint("customer", customerId) });
   return {
-    deleted: { memories: memories.deletedCount, footprints: footprints.deletedCount },
+    deleted: { memories: memories.deletedCount, footprints: footprints.deletedCount, calls: calls.deletedCount },
     scrubbed: { claimTexts: claims.modifiedCount },
     kept: ["orders", "refunds", "disputes"],
   };

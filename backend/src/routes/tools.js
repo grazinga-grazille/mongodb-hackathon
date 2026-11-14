@@ -3,7 +3,7 @@
 import { Router } from "express";
 import { getDb } from "../db.js";
 import { httpError, requireString, wrap } from "../lib/http.js";
-import { checkClaim, recordOutcome } from "../services/claims.js";
+import { checkClaim, recordOutcome, normalizeOrderId } from "../services/claims.js";
 import { issueRefund, forgetCustomer } from "../services/refunds.js";
 
 export const requireMerchant = wrap(async (req, _res, next) => {
@@ -22,7 +22,7 @@ tools.post("/check-claim", wrap(async (req, res) => {
   if (!Array.isArray(callerQuestions) || callerQuestions.length > 5) throw httpError(400, "callerQuestions must be an array (max 5)");
   res.json(await checkClaim(getDb(), {
     merchantId: req.merchantId,
-    orderId: requireString(orderId, "orderId", { max: 64 }),
+    orderId: normalizeOrderId(requireString(orderId, "orderId", { max: 64 })),
     claimText: requireString(claimText, "claimText"),
     callerQuestions: callerQuestions.map((q) => requireString(q, "callerQuestions[]", { max: 500 })),
     claimType,

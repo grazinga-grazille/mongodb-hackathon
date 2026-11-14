@@ -47,7 +47,7 @@ const PROBES = [
 ];
 
 export async function seed(db, log = console.log) {
-  const names = ["merchants", "customers", "orders", "footprints", "claims", "refunds", "disputes", "memories", "audit_log"];
+  const names = ["merchants", "customers", "orders", "footprints", "claims", "refunds", "disputes", "memories", "calls", "audit_log"];
   await Promise.all(names.map((n) => db.collection(n).deleteMany({})));
 
   await db.collection("merchants").insertMany(MERCHANTS);

@@ -10,7 +10,8 @@
     "ping": "node --env-file=.env src/ping.js",
     "setup": "node --env-file=.env src/db/cli.js setup",
     "seed": "node --env-file=.env src/db/cli.js seed",
-    "demo": "bash scripts/demo.sh"
+    "demo": "bash scripts/demo.sh",
+    "agent": "node --env-file=.env scripts/create-agent.js"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",

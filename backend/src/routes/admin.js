@@ -15,7 +15,7 @@ export const admin = Router();
 admin.get("/events", (req, res) => {
   res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive" });
   res.write(": connected\n\n");
-  const stream = getDb().watch([{ $match: { "ns.coll": { $in: ["claims", "memories", "refunds", "disputes", "footprints"] } } }]);
+  const stream = getDb().watch([{ $match: { "ns.coll": { $in: ["claims", "memories", "refunds", "disputes", "footprints", "calls"] } } }]);
   stream.on("change", (c) => res.write(`data: ${JSON.stringify({ coll: c.ns.coll, op: c.operationType })}\n\n`));
   stream.on("error", () => res.end());
   const ping = setInterval(() => res.write(": ping\n\n"), 25_000);
@@ -32,17 +32,18 @@ admin.use(requireMerchant);
 admin.get("/state", wrap(async (req, res) => {
   const db = getDb();
   const m = req.merchantId;
-  const [orders, customers, claims, refunds, disputes, memories] = await Promise.all([
+  const [orders, customers, claims, refunds, disputes, memories, calls] = await Promise.all([
     db.collection("orders").find({ merchantId: m }).sort({ _id: 1 }).toArray(),
     db.collection("customers").find({ merchantId: m }, { projection: { name: 1 } }).toArray(),
     db.collection("claims").find({ merchantId: m }).sort({ createdAt: -1 }).limit(25).toArray(),
     db.collection("refunds").find({ merchantId: m, active: true }).sort({ createdAt: -1 }).toArray(),
     db.collection("disputes").find({ merchantId: m }).sort({ createdAt: -1 }).toArray(),
     db.collection("memories").find(readableBy(m), { projection: { embedding: 0 } }).sort({ createdAt: -1 }).limit(50).toArray(),
+    db.collection("calls").find({ merchantId: m }).sort({ createdAt: -1 }).limit(10).toArray(),
   ]);
   const stopped = claims.filter((c) => ["escalated", "declined", "confirmed_scam"].includes(c.status));
   res.json({
-    merchantId: m, orders, customers, claims, refunds, disputes, memories,
+    merchantId: m, orders, customers, claims, refunds, disputes, memories, calls,
     stats: {
       refunded: refunds.reduce((s, r) => s + r.amount, 0),
       stopped: stopped.reduce((s, c) => s + c.amount, 0),

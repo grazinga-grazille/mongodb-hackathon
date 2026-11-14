@@ -165,11 +165,22 @@ export async function checkClaim(db, { merchantId, orderId, claimText, callerQue
   }
   await audit(db, "claim.checked", { merchantId, claimId, orderId, decision, riskScore });
 
+  // Previous conversations (customer-facing context only: no decisions or fraud signals).
+  const previousContacts = await db.collection("calls")
+    .find({ merchantId, customerId }, { projection: { _id: 0, createdAt: 1, summary: 1 } })
+    .sort({ createdAt: -1 }).limit(3).toArray();
+
   return {
     claimId, decision, riskScore, escalateAt: config.risk.escalateAt, claimType: type,
     order: { id: order._id, item: order.item.name, amount: order.amount },
-    signals, memoryIdsUsed, agentGuidance: GUIDANCE[decision],
+    signals, memoryIdsUsed, previousContacts, agentGuidance: GUIDANCE[decision],
   };
+}
+
+/** Accept "1042", "ord_1042", "order number 1042" or "#1042". */
+export function normalizeOrderId(input) {
+  const digits = String(input).match(/\d+/g)?.join("");
+  return digits ? `ord_${digits}` : String(input);
 }
 
 // ---------- analyst feedback: this is what changes the next run ----------

@@ -41,6 +41,7 @@ const COLLECTIONS = {
   refunds: null,
   disputes: null,
   memories: memoryValidator,
+  calls: null,
   audit_log: null,
 };
 
@@ -60,6 +61,12 @@ const INDEXES = {
     // How long it lives: Atlas deletes each memory when its expiresAt passes.
     { key: { expiresAt: 1 }, expireAfterSeconds: 0, name: "memory_ttl" },
     { key: { "scope.merchantId": 1, "scope.customerId": 1, type: 1, status: 1 } },
+  ],
+  // Call transcripts live 30 days, then Atlas deletes them.
+  calls: [
+    { key: { expiresAt: 1 }, expireAfterSeconds: 0, name: "call_ttl" },
+    { key: { merchantId: 1, customerId: 1, createdAt: -1 } },
+    { key: { conversationId: 1 }, unique: true },
   ],
   audit_log: [{ key: { at: -1 } }],
 };
