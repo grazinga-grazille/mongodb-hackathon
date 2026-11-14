@@ -10,6 +10,7 @@
     "ping": "node --env-file=.env src/ping.js"
   },
   "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
     "express": "^4.21.2",
     "mongodb": "^6.12.0"
   },
