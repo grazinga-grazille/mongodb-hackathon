@@ -34,6 +34,14 @@ const CUSTOMERS = [
   // Gets escalated on first call (linked to Jake); analyst clears her; next call goes through.
   { _id: "cus_nina", merchantId: "shopco", name: "Nina P.", address: "12 Elm Street Apartment 4, Springfield", cardFingerprint: "fp_card_F", deviceId: "dev_nina_laptop" },
 
+  // ---- Simple voice demo: Alex (shopco) ----
+  // Call 1 (order 1111): no delivery scan, first claim -> refunded.
+  // Call 2 (order 2222): delivered with photo + second claim today -> sent to a specialist.
+  { _id: "cus_alex", merchantId: "shopco", name: "Alex R.", address: "41 Birch Lane, Springfield", cardFingerprint: "fp_card_H", deviceId: "dev_alex_iphone" },
+  // Two-caller demo: Chris is a new name, but the same address (written "Ln") and the same card as Alex.
+  // His order looks innocent (no delivery scan); only the remembered story + footprint catch him.
+  { _id: "cus_chris", merchantId: "shopco", name: "Chris B.", address: "41 Birch Ln, Springfield", cardFingerprint: "fp_card_H", deviceId: "dev_chris_android" },
+
   // ---- ElectroDepot ----
   { _id: "cus_lena", merchantId: "electro_depot", name: "Lena T.", address: "9 Spruce Court, Shelbyville", cardFingerprint: "fp_card_G", deviceId: "dev_lena_iphone" },
 ];
@@ -84,6 +92,16 @@ const ORDERS = [
   // ---- Nina (shopco) — honest, shares Jake's normalised address ----
   { _id: "ord_6001", merchantId: "shopco", customerId: "cus_nina", item: item("HP-9", "Noise-cancelling headphones", 0.6), amount: 249, placedAt: daysAgo(8),
     delivery: { status: "no_scan", photo: false, dispatchWeightKg: 0.6, deliveredAt: null } },
+
+  // ---- Two-caller voice demo: "the box was empty" ----
+  // Both parcels weighed far less than the headphones at dispatch, so the delivery facts support an
+  // empty box for BOTH callers. Only memory (vector search on the story) + footprint catch caller 2.
+  // Caller 1 — Alex, order 2058: first claim -> refunded.
+  { _id: "ord_2058", merchantId: "shopco", customerId: "cus_alex", item: item("HP-9", "Noise-cancelling headphones", 0.6), amount: 249, placedAt: daysAgo(6),
+    delivery: { status: "delivered", photo: false, dispatchWeightKg: 0.1, deliveredAt: daysAgo(2) } },
+  // Caller 2 — Chris, order 3046: new name, same story -> flagged and sent to a specialist.
+  { _id: "ord_3046", merchantId: "shopco", customerId: "cus_chris", item: item("HP-9", "Noise-cancelling headphones", 0.6), amount: 249, placedAt: daysAgo(5),
+    delivery: { status: "delivered", photo: false, dispatchWeightKg: 0.1, deliveredAt: daysAgo(1) } },
 
   // ---- Lena (electro_depot) ----
   { _id: "ord_8002", merchantId: "electro_depot", customerId: "cus_lena", item: item("TB-1", "Tablet", 0.65), amount: 349, placedAt: daysAgo(5),

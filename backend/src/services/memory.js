@@ -16,7 +16,7 @@ export const readableBy = (merchantId) => ({
 });
 
 /** Vector search over memories the merchant is allowed to read. Returns cosine similarity per hit. */
-export async function searchMemories(db, { merchantId, vector, types, limit = 3 }) {
+export async function searchMemories(db, { merchantId, vector, types, limit = 3, filter = {} }) {
   const hits = await memories(db)
     .aggregate([
       {
@@ -26,7 +26,7 @@ export async function searchMemories(db, { merchantId, vector, types, limit = 3 
           queryVector: vector,
           numCandidates: Math.max(50, limit * 20),
           limit,
-          filter: { $and: [{ status: "active" }, { type: { $in: types } }, readableBy(merchantId)] },
+          filter: { $and: [{ status: "active" }, { type: { $in: types } }, readableBy(merchantId), filter] },
         },
       },
       { $set: { score: { $meta: "vectorSearchScore" } } },

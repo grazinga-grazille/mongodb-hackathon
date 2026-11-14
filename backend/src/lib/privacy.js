@@ -8,6 +8,8 @@ const ABBREVIATIONS = [
   [/\bstreet\b/g, "st"],
   [/\bavenue\b/g, "ave"],
   [/\broad\b/g, "rd"],
+  [/\blane\b/g, "ln"],
+  [/\bdrive\b/g, "dr"],
   [/\b(apartment|unit|suite|ste)\b/g, "apt"],
 ];
 

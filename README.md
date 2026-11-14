@@ -14,6 +14,8 @@ Desktop/Coding/
 
 ## Run the backend
 
+All scripts also work from the repo root (`npm run dev`, `npm run ping`, …); the root `package.json` forwards them to `backend/`. Install from the root with `npm run install:backend`.
+
 ```bash
 cd backend
 cp .env.example .env   # fill in values (see below)

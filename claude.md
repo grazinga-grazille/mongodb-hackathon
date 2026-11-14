@@ -2,9 +2,7 @@ We are using this MD file to describe our project: a voice AI agent that process
 
 One or the other Hackathon topic:
 
-1. Build an agent using MongoDB Atlas and Vector Search to persist and retrieve memory that changes what it does on the next run, with rules for who can read each memory, how long it lives, and how it gets corrected or forgotten.
-
-2. Memory You Can Govern. Build an agent using MongoDB Atlas and Vector Search to persist and retrieve memory that changes what it does on the next run, with rules for who can read each memory, how long it lives, and how it gets corrected or forgotten.
+Build an agent using MongoDB Atlas and Vector Search to persist and retrieve memory that changes what it does on the next run, with rules for who can read each memory, how long it lives, and how it gets corrected or forgotten.
 
 Idea:
 

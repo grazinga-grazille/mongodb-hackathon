@@ -33,7 +33,10 @@ const TOOLS = [
       required: ["order_number", "claim_text"],
       properties: {
         order_number: { type: "string", description: "The order number digits only, e.g. 1042" },
-        claim_text: { type: "string", description: "What the caller says happened, in their own words, as close to verbatim as possible" },
+        claim_text: {
+          type: "string",
+          description: "What went wrong, in the caller's own words, as close to verbatim as possible. Do not include the order number (it goes in order_number).",
+        },
         caller_questions: {
           type: "string",
           description: "Any questions the caller asked about refund rules or limits, verbatim, separated by ' | '. Empty string if none.",

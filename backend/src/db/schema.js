@@ -2,7 +2,7 @@
 import { embeddingDims } from "../lib/embeddings.js";
 
 export const VECTOR_INDEX = "memory_vec";
-export const MEMORY_TYPES = ["scam_script", "probe_phrase", "suspect_account", "cleared_customer"];
+export const MEMORY_TYPES = ["scam_script", "probe_phrase", "suspect_account", "cleared_customer", "claim_story"];
 
 const memoryValidator = {
   $jsonSchema: {
