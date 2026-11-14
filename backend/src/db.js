@@ -39,6 +39,9 @@ export function getDb() {
   return db;
 }
 
+/** The underlying client, needed for transactions (client.startSession()). */
+export const getClient = () => client;
+
 export async function close() {
   await client.close();
   db = undefined;

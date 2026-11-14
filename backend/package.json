@@ -7,7 +7,10 @@
   "scripts": {
     "start": "node --env-file=.env src/server.js",
     "dev": "node --env-file=.env --watch src/server.js",
-    "ping": "node --env-file=.env src/ping.js"
+    "ping": "node --env-file=.env src/ping.js",
+    "setup": "node --env-file=.env src/db/cli.js setup",
+    "seed": "node --env-file=.env src/db/cli.js seed",
+    "demo": "bash scripts/demo.sh"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",

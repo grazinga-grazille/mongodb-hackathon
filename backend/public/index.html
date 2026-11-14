@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Refund Guard</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --text: #1b1f24; --muted: #626b77; --line: #e2e5ea;
+    --green: #1a7f4b; --green-bg: #e6f4ec; --amber: #9a5b00; --amber-bg: #fdf1dc;
+    --red: #b42318; --red-bg: #fde8e6; --blue: #1f5fbf; --blue-bg: #e7effb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111418; --panel: #1a1e24; --text: #e8eaed; --muted: #9aa3ad; --line: #2b313a;
+      --green: #5fd39a; --green-bg: #15301f; --amber: #f2b45a; --amber-bg: #33270f;
+      --red: #ff8a80; --red-bg: #3a1a18; --blue: #8ab4f8; --blue-bg: #17253d;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, -apple-system, Segoe UI, sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  h1 { font-size: 17px; margin: 0; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 10px; }
+  .stats { display: flex; gap: 20px; }
+  .stat b { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
+  .stat span { color: var(--muted); font-size: 12px; }
+  main { display: grid; grid-template-columns: 340px 1fr 1fr; gap: 16px; padding: 16px 20px; }
+  @media (max-width: 1100px) { main { grid-template-columns: 1fr; } }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; min-width: 0; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+  select, textarea, input, button { font: inherit; color: inherit; }
+  select, textarea, input { width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); }
+  textarea { min-height: 64px; resize: vertical; }
+  button { cursor: pointer; border: 1px solid var(--line); background: var(--bg); border-radius: 6px; padding: 6px 10px; }
+  button.primary { background: var(--blue); color: #fff; border-color: var(--blue); width: 100%; margin-top: 12px; padding: 9px; }
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .presets button { font-size: 12px; }
+  .card { border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+  .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .pill { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+  .APPROVE, .approved, .refunded, .cleared, .active { background: var(--green-bg); color: var(--green); }
+  .ESCALATE, .escalated { background: var(--amber-bg); color: var(--amber); }
+  .DECLINE, .declined, .confirmed_scam, .revoked { background: var(--red-bg); color: var(--red); }
+  .superseded, .network { background: var(--blue-bg); color: var(--blue); }
+  .merchant { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+  .muted { color: var(--muted); font-size: 12px; }
+  ul.signals { margin: 6px 0 0; padding-left: 18px; }
+  ul.signals li { margin: 2px 0; }
+  .quote { font-style: italic; }
+  .actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .empty { color: var(--muted); font-style: italic; }
+  #toast { position: fixed; bottom: 16px; right: 16px; max-width: 420px; padding: 10px 14px; border-radius: 8px; background: var(--text); color: var(--bg); opacity: 0; transition: opacity .2s; }
+  #toast.show { opacity: .95; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Refund Guard <span class="muted">— governed memory for refund calls</span></h1>
+  <div class="stats">
+    <div class="stat"><b id="s-refunded">$0</b><span>refunded</span></div>
+    <div class="stat"><b id="s-stopped">$0</b><span>scam $ stopped</span></div>
+    <div class="stat"><b id="s-memories">0</b><span>active memories</span></div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <select id="merchant" style="width:auto"><option value="shopco">ShopCo</option><option value="gadgetbarn">GadgetBarn</option></select>
+    <button id="reset">Reset demo</button>
+  </div>
+</header>
+
+<main>
+  <section>
+    <h2>Simulate a call</h2>
+    <div class="presets" id="presets"></div>
+    <label for="order">Order</label>
+    <select id="order"></select>
+    <label for="claim">Caller says</label>
+    <textarea id="claim" placeholder="My package never arrived"></textarea>
+    <label for="question">Caller asks (optional)</label>
+    <input id="question" placeholder="Can you refund without me sending it back?" />
+    <button class="primary" id="check">Check claim</button>
+    <div class="actions">
+      <button id="dispute">Bank opens chargeback on this order</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Claims &amp; decisions</h2>
+    <div id="claims"></div>
+  </section>
+
+  <section>
+    <h2>Memory</h2>
+    <div id="memories"></div>
+  </section>
+</main>
+<div id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const money = (n) => "$" + Number(n || 0).toLocaleString();
+const ago = (d) => { const s = (Date.now() - new Date(d)) / 1000; return s < 60 ? "just now" : s < 3600 ? Math.round(s / 60) + "m ago" : s < 86400 ? Math.round(s / 3600) + "h ago" : Math.round(s / 86400) + "d ago"; };
+const until = (d) => { const days = (new Date(d) - Date.now()) / 86400000; return days < 0 ? "expiring" : days < 1 ? "<1 day" : Math.round(days) + " days"; };
+
+const PRESETS = {
+  shopco: [
+    { label: "Jake: never arrived", order: "ord_1042", claim: "Yeah the headphones just never turned up at my place", q: "Can you just refund it without me sending anything back?" },
+    { label: "Maria: empty box", order: "ord_2001", claim: "The box showed up but there was nothing in it", q: "" },
+    { label: "Priya: never arrived", order: "ord_3001", claim: "My headphones never arrived", q: "" },
+  ],
+  gadgetbarn: [{ label: "Tom: empty box", order: "ord_9001", claim: "The graphics card box was empty", q: "" }],
+};
+
+let state;
+const merchant = () => $("merchant").value;
+
+async function api(path, { method = "GET", body } = {}) {
+  const res = await fetch(path, { method, headers: { "content-type": "application/json", "x-merchant-id": merchant() }, body: body && JSON.stringify(body) });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 3500); }
+const run = (fn) => async (...a) => { try { await fn(...a); } catch (e) { toast(e.message); } };
+
+function renderPresets() {
+  $("presets").innerHTML = PRESETS[merchant()].map((p, i) => `<button data-i="${i}">${esc(p.label)}</button>`).join("");
+  $("presets").querySelectorAll("button").forEach((b) => b.onclick = () => {
+    const p = PRESETS[merchant()][b.dataset.i];
+    $("order").value = p.order; $("claim").value = p.claim; $("question").value = p.q;
+  });
+}
+
+function render() {
+  const names = Object.fromEntries(state.customers.map((c) => [c._id, c.name]));
+  const keep = $("order").value;
+  $("order").innerHTML = state.orders.map((o) => `<option value="${o._id}">${o._id} · ${esc(names[o.customerId] || o.customerId)} · ${esc(o.item.name)} · ${money(o.amount)} · ${o.delivery.status}${o.delivery.photo ? " (photo)" : ""}</option>`).join("");
+  if (keep) $("order").value = keep;
+
+  $("s-refunded").textContent = money(state.stats.refunded);
+  $("s-stopped").textContent = money(state.stats.stopped);
+  $("s-memories").textContent = state.memories.filter((m) => m.status === "active").length;
+
+  $("claims").innerHTML = state.claims.length ? state.claims.map((c) => `
+    <div class="card">
+      <div class="row"><strong>${esc(names[c.customerId] || c.customerId)} · ${c.orderId} · ${money(c.amount)}</strong>
+        <span><span class="pill ${c.decision}">${c.decision}</span> <span class="pill ${c.status}">${c.status.replace("_", " ")}</span></span></div>
+      <div class="quote">“${esc(c.text)}”</div>
+      <div class="muted">${c.claimType} · risk ${c.riskScore} · ${ago(c.createdAt)}</div>
+      ${c.signals.length ? `<ul class="signals">${c.signals.map((s) => `<li><b>${s.code.replaceAll("_", " ")}</b>${s.similarity ? ` (${s.similarity})` : ""}: ${esc(s.detail)}</li>`).join("")}</ul>` : `<div class="muted">No risk signals</div>`}
+      <div class="actions">
+        ${c.status === "approved" ? `<button data-act="refund" data-id="${c._id}">Issue refund</button>` : ""}
+        ${["escalated", "approved", "refunded", "declined"].includes(c.status) ? `<button data-act="confirmed_scam" data-id="${c._id}">Analyst: confirm scam</button>` : ""}
+        ${["escalated", "declined", "confirmed_scam"].includes(c.status) ? `<button data-act="cleared" data-id="${c._id}">Analyst: clear customer</button>` : ""}
+        <button data-act="forget" data-cust="${c.customerId}">Forget ${esc(names[c.customerId] || "customer")}</button>
+      </div>
+    </div>`).join("") : `<div class="empty">No claims yet — simulate a call.</div>`;
+
+  $("memories").innerHTML = state.memories.length ? state.memories.map((m) => `
+    <div class="card">
+      <div class="row"><strong>${m.type.replaceAll("_", " ")}</strong>
+        <span><span class="pill ${m.scope.level}">${m.scope.level === "network" ? "shared" : "private · " + esc(m.scope.merchantId)}</span> <span class="pill ${m.status}">${m.status}</span></span></div>
+      <div class="quote">“${esc(m.text)}”</div>
+      <div class="muted">v${m.version ?? 1} · seen ${m.seenCount ?? 1}× · confidence ${(m.confidence ?? 0).toFixed(1)} · used in ${m.usedInDecisions?.length ?? 0} decision(s) · expires in ${until(m.expiresAt)}${m.scope.customerId ? " · " + esc(names[m.scope.customerId] || m.scope.customerId) : ""}</div>
+      ${m.status === "active" ? `<div class="actions"><button data-act="correct" data-id="${m._id}">Correct</button><button data-act="expire" data-id="${m._id}">Expire now</button></div>` : ""}
+    </div>`).join("") : `<div class="empty">No memories.</div>`;
+}
+
+async function load() { state = await api("/admin/state"); render(); }
+
+document.addEventListener("click", run(async (e) => {
+  const b = e.target.closest("button[data-act]"); if (!b) return;
+  const { act, id, cust } = b.dataset;
+  if (act === "refund") { const r = await api("/tools/issue-refund", { method: "POST", body: { claimId: id } }); toast(`Refunded ${money(r.amount)}`); }
+  if (act === "confirmed_scam" || act === "cleared") { await api("/tools/record-outcome", { method: "POST", body: { claimId: id, outcome: act } }); toast(act === "cleared" ? "Customer cleared — memory updated" : "Scam confirmed — memory written"); }
+  if (act === "forget") { const r = await api("/tools/forget-me", { method: "POST", body: { customerId: cust } }); toast(`Forgot customer: ${r.deleted.memories} memories, ${r.deleted.footprints} footprints deleted; records kept`); }
+  if (act === "expire") { const r = await api(`/admin/memories/${id}/expire`, { method: "POST" }); toast(r.note); }
+  if (act === "correct") {
+    const text = prompt("Corrected memory text:"); if (!text) return;
+    const r = await api(`/admin/memories/${id}/correct`, { method: "POST", body: { text } }); toast(`Saved as v${r.version}; old version superseded`);
+  }
+  await load();
+}));
+
+$("check").onclick = run(async () => {
+  const q = $("question").value.trim();
+  const r = await api("/tools/check-claim", { method: "POST", body: { orderId: $("order").value, claimText: $("claim").value, callerQuestions: q ? [q] : [] } });
+  toast(`${r.decision} — ${r.agentGuidance}`); await load();
+});
+$("dispute").onclick = run(async () => { await api("/admin/disputes", { method: "POST", body: { orderId: $("order").value } }); toast(`Chargeback opened on ${$("order").value}`); await load(); });
+$("reset").onclick = run(async () => { await api("/admin/reset", { method: "POST" }); toast("Demo data reset"); await load(); });
+$("merchant").onchange = run(async () => { $("order").value = ""; renderPresets(); await load(); });
+
+// Live: MongoDB change stream -> server-sent events -> reload.
+let pending;
+new EventSource("/admin/events").onmessage = () => { clearTimeout(pending); pending = setTimeout(run(load), 250); };
+
+renderPresets();
+run(load)();
+</script>
+</body>
+</html>
